@@ -11,4 +11,8 @@
     <PackageReference Include="OpenAI-DotNet" Version="8.8.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="screenshots\" />
+  </ItemGroup>
+
 </Project>
