@@ -95,5 +95,5 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/ai-code-assistant.git
-cd ai-code-assistant
+git clone https://github.com/hamnava/chatbot.git
+cd chatbot
