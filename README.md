@@ -11,8 +11,6 @@ A modern AI-powered code assistant built with **ASP.NET Core 9** and **OpenAI AP
 
 ## 📸 Screenshots
 
-<div align="center">
-
 ### Main Interface
 ![Main Interface](screenshots/main-interface.png)
 
@@ -21,8 +19,6 @@ A modern AI-powered code assistant built with **ASP.NET Core 9** and **OpenAI AP
 
 ### Live Preview Modal
 ![Preview Modal](screenshots/preview-modal.png)
-
-</div>
 
 ---
 
