@@ -1,0 +1,583 @@
+﻿@{
+    ViewData["Title"] = "Ask";
+}
+
+<!-- Bootstrap Modal for Preview -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="bi bi-eye"></i> Code Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="previewFrame" style="width: 100%; height: 500px; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="openInNewTab()">
+                    <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-chat-dots"></i> Ask AI</h5>
+        </div>
+        <div class="card-body">
+            <textarea class="form-control" id="prompt" rows="4" placeholder="Ask me anything..."></textarea>
+            <div class="mt-3">
+                <button class="btn btn-primary" onclick="sendPrompt()">
+                    <i class="bi bi-send"></i> Ask
+                </button>
+                <button class="btn btn-success" onclick="previewCode()" id="previewBtn" disabled>
+                    <i class="bi bi-eye"></i> Preview HTML
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="response" class="mt-4"></div>
+</div>
+
+<!-- Prism CSS & JS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<style>
+    /* Response text styling */
+    .response-text {
+        margin: 15px 0;
+        line-height: 1.8;
+        color: #333;
+    }
+
+        .response-text h1,
+        .response-text h2,
+        .response-text h3,
+        .response-text h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .response-text h1 {
+            font-size: 1.8rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        .response-text h2 {
+            font-size: 1.5rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .response-text h3 {
+            font-size: 1.3rem;
+        }
+
+        .response-text h4 {
+            font-size: 1.1rem;
+        }
+
+        .response-text ul,
+        .response-text ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .response-text li {
+            margin: 5px 0;
+        }
+
+    /* Inline code styling */
+    .inline-code {
+        background-color: #f4f4f4;
+        border: 1px solid #e1e1e1;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.9em;
+        color: #c7254e;
+    }
+
+    /* Code block container */
+    .code-block {
+        position: relative;
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .code-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 8px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .code-label {
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .copy-btn {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .copy-btn.copied {
+            background: #27ae60;
+        }
+
+    .code-block pre {
+        margin: 0 !important;
+        border-radius: 0 0 8px 8px !important;
+        max-height: 400px;
+        overflow: auto;
+    }
+
+        .code-block pre code {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+    /* Loading spinner */
+    .loading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 20px;
+        color: #666;
+    }
+
+        .loading .spinner-border {
+            width: 20px;
+            height: 20px;
+        }
+
+    /* Bold and italic text */
+    .response-text strong {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .response-text em {
+        font-style: italic;
+        color: #555;
+    }
+
+    /* Modal iframe */
+    #previewFrame {
+        background: white;
+    }
+</style>
+
+<script>
+    // Store parsed code blocks globally for preview
+    let parsedCodeBlocks = [];
+    let currentPreviewHtml = '';
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    // Parse markdown text content (not code blocks)
+    function parseMarkdownText(text) {
+        let html = escapeHtml(text);
+
+        // Headers (must be at start of line)
+        html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Bold text **text** or __text__
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+        // Italic text *text* or _text_
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+
+        // Inline code `code`
+        html = html.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+        // Unordered lists (- item or * item)
+        html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+        // Ordered lists (1. item)
+        html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+        // Line breaks (but not inside lists or headers)
+        html = html.replace(/\n(?!<)/g, '<br>');
+
+        // Clean up extra breaks
+        html = html.replace(/<br>\s*<br>/g, '</p><p>');
+        html = html.replace(/<br>\s*(<h[1-4]>)/g, '$1');
+        html = html.replace(/(<\/h[1-4]>)\s*<br>/g, '$1');
+        html = html.replace(/<br>\s*(<ul>)/g, '$1');
+        html = html.replace(/(<\/ul>)\s*<br>/g, '$1');
+
+        return html;
+    }
+
+    // Parse markdown response to separate text and code blocks
+    function parseMarkdownResponse(text) {
+        const parts = [];
+        // Regex to match ```language\ncode\n```
+        const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+
+        let lastIndex = 0;
+        let match;
+
+        while ((match = codeBlockRegex.exec(text)) !== null) {
+            // Add text before code block
+            if (match.index > lastIndex) {
+                const textContent = text.substring(lastIndex, match.index).trim();
+                if (textContent) {
+                    parts.push({
+                        type: 'text',
+                        content: textContent
+                    });
+                }
+            }
+
+            // Add code block
+            parts.push({
+                type: 'code',
+                language: match[1] || 'plaintext',
+                content: match[2]
+            });
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Add remaining text after last code block
+        if (lastIndex < text.length) {
+            const textContent = text.substring(lastIndex).trim();
+            if (textContent) {
+                parts.push({
+                    type: 'text',
+                    content: textContent
+                });
+            }
+        }
+
+        return parts;
+    }
+
+    // Map language names to Prism class names
+    function getPrismLanguage(lang) {
+        const langMap = {
+            'html': 'markup',
+            'xml': 'markup',
+            'csharp': 'csharp',
+            'cs': 'csharp',
+            'c#': 'csharp',
+            'javascript': 'javascript',
+            'js': 'javascript',
+            'css': 'css',
+            'json': 'json',
+            'sql': 'sql',
+            '': 'plaintext'
+        };
+        return langMap[lang.toLowerCase()] || lang.toLowerCase();
+    }
+
+    // Get display name for language
+    function getLanguageDisplayName(lang) {
+        const nameMap = {
+            'html': 'HTML',
+            'xml': 'XML',
+            'csharp': 'C#',
+            'cs': 'C#',
+            'c#': 'C#',
+            'javascript': 'JavaScript',
+            'js': 'JavaScript',
+            'css': 'CSS',
+            'json': 'JSON',
+            'sql': 'SQL',
+            'plaintext': 'Code',
+            '': 'Code'
+        };
+        return nameMap[lang.toLowerCase()] || lang.toUpperCase();
+    }
+
+    // Render parsed parts to HTML
+    function renderParsedResponse(parts) {
+        return parts.map((part, index) => {
+            if (part.type === 'text') {
+                const formattedText = parseMarkdownText(part.content);
+                return `<div class="response-text">${formattedText}</div>`;
+            } else {
+                const prismLang = getPrismLanguage(part.language);
+                const displayName = getLanguageDisplayName(part.language);
+                return `
+                    <div class="code-block" data-index="${index}">
+                        <div class="code-header">
+                            <span class="code-label">
+                                <i class="bi bi-code-slash"></i> ${displayName}
+                            </span>
+                            <button class="copy-btn" onclick="copyCode(this, ${index})">
+                                <i class="bi bi-clipboard"></i>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <pre><code class="language-${prismLang}">${escapeHtml(part.content)}</code></pre>
+                    </div>
+                `;
+            }
+        }).join('');
+    }
+
+    // Copy code to clipboard
+    async function copyCode(button, index) {
+        const codeBlock = parsedCodeBlocks.find((_, i) => {
+            // Find the actual index in the filtered array
+            let codeIndex = 0;
+            for (let j = 0; j < parsedCodeBlocks.length; j++) {
+                if (parsedCodeBlocks[j] === parsedCodeBlocks[index]) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        // Get code from the code block element
+        const codeElement = button.closest('.code-block').querySelector('code');
+        const code = codeElement.textContent;
+
+        try {
+            await navigator.clipboard.writeText(code);
+
+            // Visual feedback
+            const icon = button.querySelector('i');
+            const text = button.querySelector('span');
+
+            button.classList.add('copied');
+            icon.className = 'bi bi-check2';
+            text.textContent = 'Copied!';
+
+            setTimeout(() => {
+                button.classList.remove('copied');
+                icon.className = 'bi bi-clipboard';
+                text.textContent = 'Copy';
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            button.querySelector('span').textContent = 'Copied!';
+            setTimeout(() => {
+                button.querySelector('span').textContent = 'Copy';
+            }, 2000);
+        }
+    }
+
+    async function sendPrompt() {
+        const prompt = document.getElementById("prompt").value;
+        const responseDiv = document.getElementById("response");
+        const previewBtn = document.getElementById("previewBtn");
+
+        if (!prompt.trim()) {
+            alert('Please enter a prompt');
+            return;
+        }
+
+        responseDiv.innerHTML = `
+            <div class="loading">
+                <div class="spinner-border text-primary" role="status"></div>
+                <span>Thinking...</span>
+            </div>
+        `;
+        previewBtn.disabled = true;
+
+        try {
+            const res = await fetch('/Home/Ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+
+            const data = await res.json();
+            console.log("Raw response:", data.text);
+
+            // Parse the markdown response
+            const parts = parseMarkdownResponse(data.text);
+            console.log("Parsed parts:", parts);
+
+            // Store code blocks for preview/copy
+            parsedCodeBlocks = parts.filter(p => p.type === 'code');
+
+            // Check if there are HTML blocks for preview
+            const hasHtmlBlocks = parsedCodeBlocks.some(block =>
+                ['html', 'markup', 'xml', ''].includes(block.language.toLowerCase())
+            );
+            previewBtn.disabled = !hasHtmlBlocks;
+
+            // Render the response
+            responseDiv.innerHTML = renderParsedResponse(parts);
+
+            // Apply Prism highlighting
+            Prism.highlightAll();
+
+        } catch (error) {
+            responseDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    function previewCode() {
+        // Find HTML/markup code blocks
+        const htmlBlocks = parsedCodeBlocks.filter(block =>
+            ['html', 'markup', 'xml', ''].includes(block.language.toLowerCase())
+        );
+
+        if (htmlBlocks.length === 0) {
+            alert('No HTML code blocks found to preview!');
+            return;
+        }
+
+        // Combine all HTML blocks or use the first one
+        currentPreviewHtml = htmlBlocks.map(b => b.content).join('\n');
+
+        // Get the iframe
+        const iframe = document.getElementById('previewFrame');
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(currentPreviewHtml);
+        doc.close();
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        modal.show();
+    }
+
+    function openInNewTab() {
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write(currentPreviewHtml);
+        newWindow.document.close();
+    }
+
+    // Allow Ctrl+Enter to submit
+    document.getElementById('prompt').addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            sendPrompt();
+        }
+    });
+</script>
+
+
+
+
+@* @{
+    ViewData["Title"] = "Ask";
+}
+
+<div>
+    <textarea class="form-control" id="prompt"></textarea>
+    <button class="btn btn-primary mt-3" onclick="sendPrompt()">Ask</button>
+    <button class="btn btn-secondary mt-3" onclick="previewCode()">Preview</button>
+    <div id="preview" class="mt-3"></div>
+</div>
+<div id="response"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+
+<script>
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;")
+                   .replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;");
+    }
+
+    async function sendPrompt() {
+        const prompt = document.getElementById("prompt").value;
+        console.log(prompt);
+
+        const res = await fetch('/Home/Ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+        });
+
+        const data = await res.json();
+        console.log(data);
+
+        const escaped = escapeHtml(data.text);
+
+           document.getElementById("response").innerHTML =
+        `<pre><code class="language-csharp">${escaped}</code></pre>`;
+ 
+        // Let Prism parse and highlight the new code block
+        Prism.highlightAll();
+    }
+
+    function previewCode() {
+        const rawCode = document.querySelector("#response code").textContent;
+
+        const iframe = document.createElement("iframe");
+        iframe.style.width = "100%";
+        iframe.style.height = "400px";
+        iframe.style.border = "1px solid #ccc";
+
+        document.getElementById("preview").innerHTML = ""; // Clear previous preview
+        document.getElementById("preview").appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(rawCode);
+        doc.close();
+    }
+</script> *@
