@@ -12,13 +12,13 @@ A modern AI-powered code assistant built with **ASP.NET Core 9** and **OpenAI AP
 ## 📸 Screenshots
 
 ### Main Interface
-![Main Interface](screenshots/main-interface.png)
+![Main Interface](ChatBot/screenshots/main-interface.png)
 
 ### Code Response with Syntax Highlighting
-![Code Highlighting](screenshots/code-highlighting.png)
+![Code Highlighting](ChatBot/screenshots/code-highlighting.png)
 
 ### Live Preview Modal
-![Preview Modal](screenshots/preview-modal.png)
+![Preview Modal](ChatBot/screenshots/preview-modal.png)
 
 ---
 
